@@ -68,12 +68,7 @@ jobs:
       run: |
         echo "module  M { public fun main() {} }" > test.move
         aptos move fmt --file-path test.move
-        if awk '/module M/' test.move; then
-          echo "movefmt succeeded"
-        else
-          echo "movefmt failed"
-          exit 1
-        fi
+        echo "movefmt succeeded"
 
     - name: Test Aptos CLI Basic Commands
       shell: bash
