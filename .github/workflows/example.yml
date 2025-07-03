@@ -34,6 +34,25 @@ jobs:
         cd my-aptos-project
         aptos account list --profile default
 
+    - name: Create Move.toml Configuration
+      run: |
+        cd my-aptos-project
+        
+        # Create Move.toml configuration file
+        cat > Move.toml << 'EOF'
+        [package]
+        name = "hello"
+        version = "1.0.0"
+        authors = ["Your Name <your.email@example.com>"]
+        upgrade_policy = "compatible"
+
+        [addresses]
+        hello = "_"
+
+        [dependencies]
+        AptosFramework = { git = "https://github.com/aptos-labs/aptos-framework", subdir = "aptos-framework", rev = "mainnet" }
+        EOF
+
     - name: Create a Simple Move Module
       run: |
         cd my-aptos-project
@@ -71,7 +90,7 @@ jobs:
     - name: Setup Aptos CLI (Specific Version)
       uses: ./
       with:
-        version: "7.5.0"
+        version: "2.4.0"
 
     - name: Deploy to Devnet
       run: |
