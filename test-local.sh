@@ -14,8 +14,21 @@ echo "----------------------------"
 
 # Test latest version detection
 echo "Testing latest version detection..."
-LATEST_TAG=$(curl -s https://api.github.com/repos/aptos-labs/aptos-core/releases/latest | grep '"tag_name":' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
-LATEST_VERSION="${LATEST_TAG#v}"
+LATEST_TAG=$(curl -s https://api.github.com/repos/aptos-labs/aptos-core/releases | grep '"tag_name":' | grep 'aptos-cli-v' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+echo "Latest CLI tag: $LATEST_TAG"
+
+# Extract version number from tag
+if [[ "$LATEST_TAG" =~ aptos-cli-v([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+  LATEST_VERSION="${BASH_REMATCH[1]}"
+elif [[ "$LATEST_TAG" =~ v([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+  LATEST_VERSION="${BASH_REMATCH[1]}"
+elif [[ "$LATEST_TAG" =~ ([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+  LATEST_VERSION="${BASH_REMATCH[1]}"
+else
+  echo "❌ Could not extract version number from tag: $LATEST_TAG"
+  exit 1
+fi
+
 echo "Latest version: $LATEST_VERSION"
 
 if [ -z "$LATEST_VERSION" ]; then
@@ -27,7 +40,7 @@ fi
 
 # Test specific version
 echo "Testing specific version..."
-SPECIFIC_VERSION="2.4.0"
+SPECIFIC_VERSION="7.5.0"
 echo "Specific version: $SPECIFIC_VERSION"
 echo "✅ Specific version test passed"
 
@@ -36,17 +49,17 @@ echo ""
 echo "📋 Test 2: URL Generation"
 echo "-------------------------"
 
-# Detect OS and architecture
+# Detect OS and architecture for asset naming
 case "$(uname -s)" in
-    Linux*)     os_name=linux ;;
-    Darwin*)    os_name=darwin ;;
-    CYGWIN*|MINGW*|MSYS*) os_name=windows ;;
+    Linux*)     os_name="Linux" ;;
+    Darwin*)    os_name="macOS" ;;
+    CYGWIN*|MINGW*|MSYS*) os_name="Windows" ;;
     *)          echo "Unsupported OS: $(uname -s)" && exit 1 ;;
 esac
 
 case "$(uname -m)" in
-    x86_64)     arch_name=x86_64 ;;
-    arm64|aarch64) arch_name=aarch64 ;;
+    x86_64)     arch_name="x86_64" ;;
+    arm64|aarch64) arch_name="arm64" ;;
     *)          echo "Unsupported architecture: $(uname -m)" && exit 1 ;;
 esac
 

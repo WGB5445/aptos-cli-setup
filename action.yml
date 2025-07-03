@@ -13,17 +13,30 @@ runs:
       shell: bash
       run: |
         if [ "${{ inputs.version }}" = "latest" ]; then
-          TAG=$(curl -s https://api.github.com/repos/aptos-labs/aptos-core/releases/latest \
-                | grep '"tag_name":' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+          # Get all releases and find the latest CLI release
+          TAG=$(curl -s https://api.github.com/repos/aptos-labs/aptos-core/releases \
+                | grep '"tag_name":' | grep 'aptos-cli-v' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
           if [ -z "$TAG" ]; then
-            echo "Error: Failed to fetch latest version from GitHub API"
+            echo "Error: Failed to fetch latest CLI version from GitHub API"
             exit 1
           fi
         else
-          TAG="${{ inputs.version }}"
+          TAG="aptos-cli-v${{ inputs.version }}"
         fi
-        # Remove leading "v" if present
-        VERSION="${TAG#v}"
+        
+        # Extract version number from tag
+        # Handle formats like: aptos-cli-v7.6.0, v7.6.0, 7.6.0
+        if [[ "$TAG" =~ aptos-cli-v([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+          VERSION="${BASH_REMATCH[1]}"
+        elif [[ "$TAG" =~ v([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+          VERSION="${BASH_REMATCH[1]}"
+        elif [[ "$TAG" =~ ([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+          VERSION="${BASH_REMATCH[1]}"
+        else
+          echo "Error: Could not extract version number from tag: $TAG"
+          exit 1
+        fi
+        
         echo "version=$VERSION" >> $GITHUB_OUTPUT
 
     - name: Build download URL
