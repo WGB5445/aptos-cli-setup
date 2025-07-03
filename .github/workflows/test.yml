@@ -48,9 +48,9 @@ jobs:
         
         # Verify it's in the expected directory
         if [[ "$RUNNER_OS" == "Windows" ]]; then
-          expected_path="$USERPROFILE\.aptos\bin\aptos.exe"
+          expected_path="$USERPROFILE\.aptoscli\bin\aptos.exe"
         else
-          expected_path="$HOME/.aptos/bin/aptos"
+          expected_path="$HOME/.aptoscli/bin/aptos"
         fi
         echo "Expected path: $expected_path"
         
@@ -63,6 +63,8 @@ jobs:
 
     - name: Test Move Fmt
       shell: bash
+      env:
+        PATH: $HOME/.aptoscli/bin:$PATH
       run: |
         echo "module  M { public fun main() {} }" > test.move
         aptos move fmt --file-path test.move
