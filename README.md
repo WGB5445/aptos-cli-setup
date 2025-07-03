@@ -16,14 +16,14 @@ A GitHub Action to download and install the Aptos CLI on CI environments (Linux/
 
 ```yaml
 - name: Setup Aptos CLI
-  uses: WGB5445/aptos-cli-setup@main
+  uses: WGB5445/aptos-cli-setup@v1
 ```
 
 ### Specify a Version
 
 ```yaml
 - name: Setup Aptos CLI
-  uses: WGB5445/aptos-cli-setup@main
+  uses: WGB5445/aptos-cli-setup@v1
   with:
     version: "7.5.0"
 ```
@@ -55,7 +55,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Setup Aptos CLI
-      uses: WGB5445/aptos-cli-setup@main
+      uses: WGB5445/aptos-cli-setup@v1
 
     - name: Test Aptos CLI
       run: |
@@ -137,7 +137,7 @@ To debug issues, you can enable debug logging:
 
 ```yaml
 - name: Setup Aptos CLI
-  uses: WGB5445/aptos-cli-setup@main
+  uses: WGB5445/aptos-cli-setup@v1
   env:
     ACTIONS_STEP_DEBUG: true
 ```
