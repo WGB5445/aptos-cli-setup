@@ -146,6 +146,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Test Invalid Version (Should Fail)
+      id: invalid_version
       uses: ./
       continue-on-error: true
       with:
@@ -154,7 +155,7 @@ jobs:
     - name: Check Error Status
       shell: bash
       run: |
-        if [[ "${{ job.status }}" == "failure" ]]; then
+        if [ "${{ steps.invalid_version.outcome }}" = "failure" ]; then
           echo "✅ Action correctly failed with invalid version"
         else
           echo "❌ Action should have failed with invalid version"
