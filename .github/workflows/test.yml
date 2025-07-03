@@ -40,6 +40,7 @@ jobs:
         version: ${{ matrix.version }}
 
     - name: Test Aptos CLI Basic Commands
+      shell: bash
       run: |
         echo "=== Testing Aptos CLI ==="
         aptos --version
@@ -52,6 +53,7 @@ jobs:
         aptos account --help
 
     - name: Test PATH Configuration
+      shell: bash
       run: |
         echo "=== Testing PATH ==="
         which aptos
@@ -84,6 +86,7 @@ jobs:
       uses: ./
 
     - name: Verify Latest Version
+      shell: bash
       run: |
         echo "=== Testing Latest Version ==="
         aptos --version
@@ -118,6 +121,7 @@ jobs:
         version: "7.5.0"
 
     - name: Verify Specific Version
+      shell: bash
       run: |
         echo "=== Testing Specific Version ==="
         aptos --version
@@ -148,6 +152,7 @@ jobs:
         version: "invalid-version-999.999.999"
 
     - name: Check Error Status
+      shell: bash
       run: |
         if [[ "${{ job.status }}" == "failure" ]]; then
           echo "✅ Action correctly failed with invalid version"
