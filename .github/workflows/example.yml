@@ -90,7 +90,7 @@ jobs:
     - name: Setup Aptos CLI (Specific Version)
       uses: ./
       with:
-        version: "2.4.0"
+        version: "7.5.0"
 
     - name: Deploy to Devnet
       run: |
