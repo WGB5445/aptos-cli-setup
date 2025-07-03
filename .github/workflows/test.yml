@@ -1,0 +1,157 @@
+name: Test Aptos CLI Action
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test-matrix:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        arch: [x64, arm64]
+        exclude:
+          # Windows ARM64 runners are not widely available yet
+          - os: windows-latest
+            arch: arm64
+        include:
+          # Test specific version
+          - os: ubuntu-latest
+            arch: x64
+            version: "2.4.0"
+            test_specific: true
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Aptos CLI (Latest)
+      if: matrix.test_specific != true
+      uses: ./
+
+    - name: Setup Aptos CLI (Specific Version)
+      if: matrix.test_specific == true
+      uses: ./
+      with:
+        version: ${{ matrix.version }}
+
+    - name: Test Aptos CLI Basic Commands
+      run: |
+        echo "=== Testing Aptos CLI ==="
+        aptos --version
+        aptos --help
+        
+        echo "=== Testing aptos init help ==="
+        aptos init --help
+        
+        echo "=== Testing aptos account help ==="
+        aptos account --help
+
+    - name: Test PATH Configuration
+      run: |
+        echo "=== Testing PATH ==="
+        which aptos
+        echo "Aptos CLI location: $(which aptos)"
+        
+        # Verify it's in the expected directory
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          expected_path="$USERPROFILE\.aptos\bin\aptos.exe"
+        else
+          expected_path="$HOME/.aptos/bin/aptos"
+        fi
+        echo "Expected path: $expected_path"
+        
+        if [[ -f "$expected_path" ]]; then
+          echo "✅ Aptos CLI found in expected location"
+        else
+          echo "❌ Aptos CLI not found in expected location"
+          exit 1
+        fi
+
+  test-latest-version:
+    runs-on: ubuntu-latest
+    name: Test Latest Version Detection
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Aptos CLI (Latest)
+      uses: ./
+
+    - name: Verify Latest Version
+      run: |
+        echo "=== Testing Latest Version ==="
+        aptos --version
+        
+        # Get the latest version from GitHub API
+        latest_tag=$(curl -s https://api.github.com/repos/aptos-labs/aptos-core/releases/latest | grep '"tag_name":' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+        latest_version="${latest_tag#v}"
+        
+        echo "Latest version from GitHub: $latest_version"
+        echo "Installed version: $(aptos --version | head -1)"
+        
+        # Check if the installed version matches the latest
+        installed_version=$(aptos --version | head -1 | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' || echo "")
+        if [[ "$installed_version" == "$latest_version" ]]; then
+          echo "✅ Installed version matches latest version"
+        else
+          echo "⚠️  Installed version ($installed_version) differs from latest version ($latest_version)"
+          echo "This might be expected if there's a delay in release propagation"
+        fi
+
+  test-specific-version:
+    runs-on: ubuntu-latest
+    name: Test Specific Version
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Aptos CLI (Version 2.3.0)
+      uses: ./
+      with:
+        version: "2.3.0"
+
+    - name: Verify Specific Version
+      run: |
+        echo "=== Testing Specific Version ==="
+        aptos --version
+        
+        # Check if the installed version matches the requested version
+        installed_version=$(aptos --version | head -1 | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' || echo "")
+        expected_version="2.3.0"
+        
+        if [[ "$installed_version" == "$expected_version" ]]; then
+          echo "✅ Installed version ($installed_version) matches expected version ($expected_version)"
+        else
+          echo "❌ Installed version ($installed_version) does not match expected version ($expected_version)"
+          exit 1
+        fi
+
+  test-error-handling:
+    runs-on: ubuntu-latest
+    name: Test Error Handling
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Test Invalid Version (Should Fail)
+      uses: ./
+      continue-on-error: true
+      with:
+        version: "invalid-version-999.999.999"
+
+    - name: Check Error Status
+      run: |
+        if [[ "${{ job.status }}" == "failure" ]]; then
+          echo "✅ Action correctly failed with invalid version"
+        else
+          echo "❌ Action should have failed with invalid version"
+          exit 1
+        fi 

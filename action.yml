@@ -1,0 +1,108 @@
+name: "Setup Aptos CLI"
+description: "Download and install Aptos CLI on CI (Linux/macOS/Windows, x86_64 & aarch64) and add it to PATH"
+inputs:
+  version:
+    description: "Aptos CLI version (tag). Use 'latest' to automatically fetch the latest release"
+    required: false
+    default: "latest"
+runs:
+  using: "composite"
+  steps:
+    - name: Get version tag
+      id: get_version
+      shell: bash
+      run: |
+        if [ "${{ inputs.version }}" = "latest" ]; then
+          TAG=$(curl -s https://api.github.com/repos/aptos-labs/aptos-core/releases/latest \
+                | grep '"tag_name":' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+          if [ -z "$TAG" ]; then
+            echo "Error: Failed to fetch latest version from GitHub API"
+            exit 1
+          fi
+        else
+          TAG="${{ inputs.version }}"
+        fi
+        # Remove leading "v" if present
+        VERSION="${TAG#v}"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: Build download URL
+      id: dl
+      shell: bash
+      run: |
+        # Detect OS and arch for asset naming
+        case "${RUNNER_OS}" in
+          Linux)
+            os_name="Linux"
+            ;;
+          macOS)
+            os_name="macOS"
+            ;;
+          Windows)
+            os_name="Windows"
+            ;;
+          *)
+            echo "Unsupported OS: $RUNNER_OS" && exit 1
+            ;;
+        esac
+        # Detect architecture for asset naming
+        arch_lc=$(echo "${RUNNER_ARCH}" | tr '[:upper:]' '[:lower:]')
+        case "$os_name-$arch_lc" in
+          Linux-x86|Linux-x64|Linux-x86_64)
+            arch_name="x86_64"
+            ;;
+          Linux-arm|Linux-arm64|Linux-aarch64)
+            arch_name="aarch64"
+            ;;
+          macOS-x86|macOS-x64|macOS-x86_64)
+            arch_name="x86_64"
+            ;;
+          macOS-arm|macOS-arm64|macOS-aarch64)
+            arch_name="arm64"
+            ;;
+          Windows-x86|Windows-x64|Windows-x86_64)
+            arch_name="x86_64"
+            ;;
+          *)
+            echo "Unsupported OS/ARCH combination: $os_name-$arch_lc" && exit 1
+            ;;
+        esac
+        asset_name="aptos-cli-${{ steps.get_version.outputs.version }}-${os_name}-${arch_name}.zip"
+        url="https://github.com/aptos-labs/aptos-core/releases/download/aptos-cli-v${{ steps.get_version.outputs.version }}/$asset_name"
+        echo "url=$url" >> $GITHUB_OUTPUT
+
+    - name: Download ZIP archive
+      shell: bash
+      run: |
+        curl -L "${{ steps.dl.outputs.url }}" -o aptos.zip
+        if [ ! -f aptos.zip ]; then
+          echo "Error: Failed to download Aptos CLI from ${{ steps.dl.outputs.url }}"
+          exit 1
+        fi
+
+    - name: Unpack & install (Linux/macOS)
+      if: runner.os != 'Windows'
+      shell: bash
+      run: |
+        unzip aptos.zip -d aptos
+        mkdir -p "$HOME/.aptos/bin"
+        mv aptos/aptos "$HOME/.aptos/bin/"
+        # Add to PATH for subsequent steps
+        echo "$HOME/.aptos/bin" >> $GITHUB_PATH
+
+    - name: Unpack & install (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        Expand-Archive aptos.zip -DestinationPath aptos
+        $dest="$Env:USERPROFILE\.aptos\bin"
+        New-Item -ItemType Directory -Force -Path $dest | Out-Null
+        Move-Item aptos\aptos.exe $dest
+        # Add to PATH for subsequent steps
+        Add-Content -Path $Env:GITHUB_PATH -Value $dest
+
+    - name: Verify installation
+      shell: bash
+      run: |
+        echo "Installed Aptos CLI version:"
+        aptos --version 

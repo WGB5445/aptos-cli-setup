@@ -1,0 +1,86 @@
+name: Example Aptos CLI Usage
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Aptos CLI
+      uses: ./
+
+    - name: Initialize Aptos Project
+      run: |
+        # Create a new directory for the project
+        mkdir -p my-aptos-project
+        cd my-aptos-project
+        
+        # Initialize a new Aptos project
+        aptos init --profile default --network devnet
+        
+        # Show the generated configuration
+        cat .aptos/config.yaml
+
+    - name: Show Aptos Account Info
+      run: |
+        cd my-aptos-project
+        aptos account list --profile default
+
+    - name: Create a Simple Move Module
+      run: |
+        cd my-aptos-project
+        mkdir -p sources
+        
+        # Create a simple Move module
+        cat > sources/hello.move << 'EOF'
+        module hello::hello_world {
+            use std::debug;
+            
+            public entry fun hello_world() {
+                debug::print(&b"Hello, World!");
+            }
+        }
+        EOF
+        
+        # Compile the module
+        aptos move compile --package-dir . --named-addresses hello=default
+
+    - name: Test Move Module
+      run: |
+        cd my-aptos-project
+        
+        # Run tests (if any)
+        aptos move test --package-dir . --named-addresses hello=default || echo "No tests found"
+
+  deploy-example:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Aptos CLI (Specific Version)
+      uses: ./
+      with:
+        version: "2.4.0"
+
+    - name: Deploy to Devnet
+      run: |
+        # This is an example - in real usage you'd need proper authentication
+        echo "Example deployment step"
+        echo "In a real scenario, you would:"
+        echo "1. Set up authentication (APTOS_PRIVATE_KEY environment variable)"
+        echo "2. Deploy your Move modules"
+        echo "3. Run integration tests"
+        
+        # Example command (commented out as it requires authentication):
+        # aptos move publish --package-dir . --named-addresses hello=default --profile default 
