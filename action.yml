@@ -1,5 +1,8 @@
 name: "Setup Aptos CLI"
 description: "Download and install Aptos CLI on CI (Linux/macOS/Windows, x86_64 & aarch64) and add it to PATH"
+branding:
+  icon: 'arrow-down'
+  color: 'green'
 inputs:
   version:
     description: "Aptos CLI version (tag). Use 'latest' to automatically fetch the latest release"
