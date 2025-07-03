@@ -5,6 +5,10 @@ inputs:
     description: "Aptos CLI version (tag). Use 'latest' to automatically fetch the latest release"
     required: false
     default: "latest"
+  install-dir:
+    description: "Install directory for Aptos CLI (will install to <dir>/bin)"
+    required: false
+    default: $HOME/.aptoscli
 runs:
   using: "composite"
   steps:
@@ -98,17 +102,17 @@ runs:
       shell: bash
       run: |
         unzip aptos.zip -d aptos
-        mkdir -p "$HOME/.aptos/bin"
-        mv aptos/aptos "$HOME/.aptos/bin/"
+        mkdir -p "${{ inputs.install-dir }}/bin"
+        mv aptos/aptos "${{ inputs.install-dir }}/bin/"
         # Add to PATH for subsequent steps
-        echo "$HOME/.aptos/bin" >> $GITHUB_PATH
+        echo "${{ inputs.install-dir }}/bin" >> $GITHUB_PATH
 
     - name: Unpack & install (Windows)
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
         Expand-Archive aptos.zip -DestinationPath aptos
-        $dest="$Env:USERPROFILE\.aptos\bin"
+        $dest="${{ inputs.install-dir }}\bin"
         New-Item -ItemType Directory -Force -Path $dest | Out-Null
         Move-Item aptos\aptos.exe $dest
         # Add to PATH for subsequent steps
@@ -119,3 +123,8 @@ runs:
       run: |
         echo "Installed Aptos CLI version:"
         aptos --version 
+
+    - name: Install movefmt CLI
+      shell: bash
+      run: |
+        aptos update movefmt --assume-yes --install-dir "${{ inputs.install-dir }}/bin" 

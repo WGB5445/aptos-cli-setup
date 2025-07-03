@@ -39,19 +39,6 @@ jobs:
       with:
         version: ${{ matrix.version }}
 
-    - name: Test Aptos CLI Basic Commands
-      shell: bash
-      run: |
-        echo "=== Testing Aptos CLI ==="
-        aptos --version
-        aptos --help
-        
-        echo "=== Testing aptos init help ==="
-        aptos init --help
-        
-        echo "=== Testing aptos account help ==="
-        aptos account --help
-
     - name: Test PATH Configuration
       shell: bash
       run: |
@@ -73,6 +60,31 @@ jobs:
           echo "❌ Aptos CLI not found in expected location"
           exit 1
         fi
+
+    - name: Test Move Fmt
+      shell: bash
+      run: |
+        echo "module  M { public fun main() {} }" > test.move
+        aptos move fmt --file-path test.move
+        if grep -q "module M" test.move; then
+          echo "movefmt succeeded"
+        else
+          echo "movefmt failed"
+          exit 1
+        fi
+
+    - name: Test Aptos CLI Basic Commands
+      shell: bash
+      run: |
+        echo "=== Testing Aptos CLI ==="
+        aptos --version
+        aptos --help
+        
+        echo "=== Testing aptos init help ==="
+        aptos init --help
+        
+        echo "=== Testing aptos account help ==="
+        aptos account --help
 
   test-latest-version:
     runs-on: ubuntu-latest
