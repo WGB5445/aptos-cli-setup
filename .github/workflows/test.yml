@@ -22,7 +22,7 @@ jobs:
           # Test specific version
           - os: ubuntu-latest
             arch: x64
-            version: "2.4.0"
+            version: "7.5.0"
             test_specific: true
 
     steps:
