@@ -12,6 +12,18 @@ inputs:
     description: "Install directory for Aptos CLI (will install to <dir>/bin)"
     required: false
     default: $HOME/.aptoscli
+  movefmt-username:
+    description: "GitHub username for movefmt repository"
+    required: false
+    default: "movebit"
+  movefmt-repo:
+    description: "GitHub repository name for movefmt"
+    required: false
+    default: "movefmt"
+  movefmt-version:
+    description: "movefmt version to install"
+    required: false
+    default: "1.2.3"
 runs:
   using: "composite"
   steps:
@@ -21,7 +33,7 @@ runs:
       run: |
         if [ "${{ inputs.version }}" = "latest" ]; then
           # Get all releases and find the latest CLI release
-          TAG=$(curl -s https://api.github.com/repos/aptos-labs/aptos-core/releases \
+          TAG=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -s https://api.github.com/repos/aptos-labs/aptos-core/releases \
                 | grep '"tag_name":' | grep 'aptos-cli-v' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
           if [ -z "$TAG" ]; then
             echo "Error: Failed to fetch latest CLI version from GitHub API"
@@ -94,7 +106,7 @@ runs:
     - name: Download ZIP archive
       shell: bash
       run: |
-        curl -L "${{ steps.dl.outputs.url }}" -o aptos.zip
+        curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -L "${{ steps.dl.outputs.url }}" -o aptos.zip
         if [ ! -f aptos.zip ]; then
           echo "Error: Failed to download Aptos CLI from ${{ steps.dl.outputs.url }}"
           exit 1
@@ -130,4 +142,65 @@ runs:
     - name: Install movefmt CLI
       shell: bash
       run: |
-        aptos update movefmt --assume-yes --install-dir "${{ inputs.install-dir }}/bin" 
+        # Detect OS and arch for movefmt asset naming
+        case "${RUNNER_OS}" in
+          Linux)
+            os_name="unknown-linux-gnu"
+            ;;
+          macOS)
+            os_name="apple-darwin"
+            ;;
+          Windows)
+            os_name="windows"
+            ;;
+          *)
+            echo "Unsupported OS: $RUNNER_OS" && exit 1
+            ;;
+        esac
+        
+        # Detect architecture for movefmt asset naming
+        arch_lc=$(echo "${RUNNER_ARCH}" | tr '[:upper:]' '[:lower:]')
+        case "$arch_lc" in
+          x86|x64|x86_64)
+            arch_name="x86_64"
+            ;;
+          arm|arm64|aarch64)
+            arch_name="aarch64"
+            ;;
+          *)
+            echo "Unsupported architecture: $arch_lc" && exit 1
+            ;;
+        esac
+        
+        # Build movefmt download URL based on actual release naming
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          movefmt_asset="movefmt.v${{ inputs.movefmt-version }}-${arch_name}-${os_name}.exe"
+        else
+          movefmt_asset="movefmt.v${{ inputs.movefmt-version }}-${arch_name}-${os_name}"
+        fi
+        movefmt_url="https://github.com/${{ inputs.movefmt-username }}/${{ inputs.movefmt-repo }}/releases/download/v${{ inputs.movefmt-version }}/${movefmt_asset}"
+        
+        echo "Downloading movefmt from: $movefmt_url"
+        
+        # Download movefmt
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -L "$movefmt_url" -o movefmt.exe
+          if [ ! -f movefmt.exe ]; then
+            echo "Error: Failed to download movefmt from $movefmt_url"
+            exit 1
+          fi
+          # Install on Windows
+          mkdir -p "${{ inputs.install-dir }}/bin"
+          mv movefmt.exe "${{ inputs.install-dir }}/bin/"
+        else
+          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -L "$movefmt_url" -o movefmt
+          if [ ! -f movefmt ]; then
+            echo "Error: Failed to download movefmt from $movefmt_url"
+            exit 1
+          fi
+          # Install on Linux/macOS
+          chmod +x movefmt
+          mv movefmt "${{ inputs.install-dir }}/bin/"
+        fi
+        
+        echo "movefmt installed successfully" 
