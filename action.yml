@@ -11,7 +11,7 @@ inputs:
   install-dir:
     description: "Install directory for Aptos CLI (will install to <dir>/bin)"
     required: false
-    default: ${{ env.HOME || env.USERPROFILE }}/.aptoscli
+    default: ~/.aptoscli
   movefmt-username:
     description: "GitHub username for movefmt repository"
     required: false
@@ -84,6 +84,8 @@ runs:
       if: steps.cache-aptos.outputs.cache-hit != 'true'
       shell: bash
       run: |
+        INSTALL_DIR="${{ inputs.install-dir }}"
+        INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
         # Detect OS and arch for asset naming
         case "${RUNNER_OS}" in
           Linux)
@@ -144,18 +146,24 @@ runs:
       if: runner.os != 'Windows' && steps.cache-aptos.outputs.cache-hit != 'true'
       shell: bash
       run: |
+        INSTALL_DIR="${{ inputs.install-dir }}"
+        INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
         unzip aptos.zip -d aptos
-        mkdir -p "${{ inputs.install-dir }}/bin"
-        mv aptos/aptos "${{ inputs.install-dir }}/bin/"
+        mkdir -p "$INSTALL_DIR/bin"
+        mv aptos/aptos "$INSTALL_DIR/bin/"
         # Add to PATH for subsequent steps
-        echo "${{ inputs.install-dir }}/bin" >> $GITHUB_PATH
+        echo "$INSTALL_DIR/bin" >> $GITHUB_PATH
 
     - name: Unpack & install (Windows)
       if: runner.os == 'Windows' && steps.cache-aptos.outputs.cache-hit != 'true'
       shell: pwsh
       run: |
+        $INSTALL_DIR = '${{ inputs.install-dir }}'
+        if ($INSTALL_DIR.StartsWith('~')) {
+          $INSTALL_DIR = $INSTALL_DIR -replace '^~', $env:USERPROFILE
+        }
         Expand-Archive aptos.zip -DestinationPath aptos
-        $dest="${{ inputs.install-dir }}\bin"
+        $dest = "$INSTALL_DIR\bin"
         New-Item -ItemType Directory -Force -Path $dest | Out-Null
         Move-Item aptos\aptos.exe $dest
         # Add to PATH for subsequent steps
@@ -165,28 +173,38 @@ runs:
       if: steps.cache-aptos.outputs.cache-hit == 'true' && runner.os != 'Windows'
       shell: bash
       run: |
+        INSTALL_DIR="${{ inputs.install-dir }}"
+        INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
         echo "Using cached Aptos CLI installation"
         # Add to PATH for subsequent steps
-        echo "${{ inputs.install-dir }}/bin" >> $GITHUB_PATH
+        echo "$INSTALL_DIR/bin" >> $GITHUB_PATH
 
     - name: Add to PATH (cache hit - Windows)
       if: steps.cache-aptos.outputs.cache-hit == 'true' && runner.os == 'Windows'
       shell: pwsh
       run: |
+        $INSTALL_DIR = '${{ inputs.install-dir }}'
+        if ($INSTALL_DIR.StartsWith('~')) {
+          $INSTALL_DIR = $INSTALL_DIR -replace '^~', $env:USERPROFILE
+        }
         Write-Host "Using cached Aptos CLI installation"
         # Add to PATH for subsequent steps
-        Add-Content -Path $Env:GITHUB_PATH -Value "${{ inputs.install-dir }}\bin"
+        Add-Content -Path $Env:GITHUB_PATH -Value "$INSTALL_DIR\bin"
 
     - name: Verify installation
       shell: bash
       run: |
+        INSTALL_DIR="${{ inputs.install-dir }}"
+        INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
         echo "Installed Aptos CLI version:"
-        aptos --version 
+        "$INSTALL_DIR/bin/aptos" --version 
 
     - name: Install movefmt CLI
       if: steps.cache-aptos.outputs.cache-hit != 'true'
       shell: bash
       run: |
+        INSTALL_DIR="${{ inputs.install-dir }}"
+        INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
         # Detect OS and arch for movefmt asset naming
         case "${RUNNER_OS}" in
           Linux)
@@ -240,8 +258,8 @@ runs:
             exit 1
           fi
           # Install on Windows
-          mkdir -p "${{ inputs.install-dir }}/bin"
-          mv movefmt.exe "${{ inputs.install-dir }}/bin/"
+          mkdir -p "$INSTALL_DIR/bin"
+          mv movefmt.exe "$INSTALL_DIR/bin/"
         else
           # Require token for download
           if [ -z "${{ inputs.github-token }}" ]; then
@@ -255,7 +273,7 @@ runs:
           fi
           # Install on Linux/macOS
           chmod +x movefmt
-          mv movefmt "${{ inputs.install-dir }}/bin/"
+          mv movefmt "$INSTALL_DIR/bin/"
         fi
         
         echo "movefmt installed successfully"
@@ -263,8 +281,10 @@ runs:
     - name: Verify movefmt installation
       shell: bash
       run: |
+        INSTALL_DIR="${{ inputs.install-dir }}"
+        INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
         echo "Installed movefmt version:"
-        movefmt --version 
+        "$INSTALL_DIR/bin/movefmt" --version 
 
     - name: Save installation cache
       uses: actions/cache@v4
