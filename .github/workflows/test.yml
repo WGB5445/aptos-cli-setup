@@ -3,8 +3,18 @@ name: Test Aptos CLI Action
 on:
   push:
     branches: [ main, master ]
+    paths:
+      - 'action.yml'
+      - '.github/workflows/**'
+      - 'test-local.sh'
+      - 'validate-action.sh'
   pull_request:
     branches: [ main, master ]
+    paths:
+      - 'action.yml'
+      - '.github/workflows/**'
+      - 'test-local.sh'
+      - 'validate-action.sh'
   workflow_dispatch:
 
 jobs:

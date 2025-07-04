@@ -3,8 +3,18 @@ name: Example Aptos CLI Usage
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'action.yml'
+      - '.github/workflows/**'
+      - 'test-local.sh'
+      - 'validate-action.sh'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'action.yml'
+      - '.github/workflows/**'
+      - 'test-local.sh'
+      - 'validate-action.sh'
 
 jobs:
   build-and-test:

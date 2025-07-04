@@ -9,7 +9,7 @@ A GitHub Action to download and install the Aptos CLI on CI environments (Linux/
 - ✅ **Flexible versioning**: Use latest release or specify a specific version
 - ✅ **Automatic PATH setup**: CLI is automatically added to PATH for subsequent steps
 - ✅ **Installation verification**: Verifies the installation by checking the CLI version
-- ✅ **GitHub token required**: Uses GitHub token for API access and movefmt download
+- ✅ **Automatic GitHub token**: Uses GitHub token automatically for API access and downloads
 
 ## Usage
 
@@ -18,8 +18,6 @@ A GitHub Action to download and install the Aptos CLI on CI environments (Linux/
 ```yaml
 - name: Setup Aptos CLI
   uses: WGB5445/aptos-cli-setup@v1
-  with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Specify a Version
@@ -28,13 +26,12 @@ A GitHub Action to download and install the Aptos CLI on CI environments (Linux/
 - name: Setup Aptos CLI
   uses: WGB5445/aptos-cli-setup@v1
   with:
-    github-token: ${{ secrets.GITHUB_TOKEN }}
     version: "7.5.0"
 ```
 
-### GitHub Token Required
+### Custom GitHub Token (Optional)
 
-A GitHub token is required for downloading movefmt:
+You can provide a custom GitHub token for higher rate limits or private repository access:
 
 ```yaml
 - name: Setup Aptos CLI
@@ -72,8 +69,6 @@ jobs:
 
     - name: Setup Aptos CLI
       uses: WGB5445/aptos-cli-setup@v1
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Test Aptos CLI
       run: |
@@ -90,7 +85,7 @@ jobs:
 | `movefmt-username` | GitHub username for movefmt repository | No | `movebit` |
 | `movefmt-repo` | GitHub repository name for movefmt | No | `movefmt` |
 | `movefmt-version` | movefmt version to install | No | `1.2.3` |
-| `github-token` | GitHub token for API access (required for downloading movefmt) | Yes | - |
+| `github-token` | GitHub token for API access (optional, uses `${{ github.token }}` by default) | No | `${{ github.token }}` |
 
 ## Outputs
 
@@ -157,22 +152,20 @@ The repository includes a test workflow (`.github/workflows/test.yml`) that test
 
 ### GitHub API Issues
 
-If you encounter GitHub API errors, the action now includes:
+If you encounter GitHub API errors, the action includes:
 
 - **Better error messages**: Clear guidance on what went wrong and how to fix it
-- **GitHub token required**: Uses `${{ github.token }}` for API access and movefmt download
+- **Automatic token handling**: Uses `${{ github.token }}` automatically for API access and downloads
 
 **Common causes of API errors:**
-- **Missing token**: GitHub token is required for downloading movefmt
 - **Rate limiting**: GitHub limits API requests
 - **Network issues**: Temporary connectivity problems
 - **Repository access**: The repositories might be temporarily unavailable
 
 **Solutions:**
-1. **Provide GitHub token**: Always include `github-token: ${{ secrets.GITHUB_TOKEN }}`
-2. **Use a specific version**: Instead of `latest`, specify a version like `7.5.0`
-3. **Check network**: Ensure your runner has internet access
-4. **Check token permissions**: Ensure the token has appropriate permissions
+1. **Use a specific version**: Instead of `latest`, specify a version like `7.5.0`
+2. **Check network**: Ensure your runner has internet access
+3. **Provide custom token**: If you need higher rate limits, provide a custom `github-token`
 
 ### Debug Mode
 
