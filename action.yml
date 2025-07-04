@@ -8,10 +8,7 @@ inputs:
     description: "Aptos CLI version (tag). Use 'latest' to automatically fetch the latest release"
     required: false
     default: "latest"
-  install-dir:
-    description: "Install directory for Aptos CLI (will install to <dir>/bin)"
-    required: false
-    default: .aptoscli
+
   movefmt-username:
     description: "GitHub username for movefmt repository"
     required: false
@@ -71,16 +68,15 @@ runs:
       id: cache-aptos
       uses: actions/cache@v4
       with:
-        path: ${{ inputs.install-dir }}/bin
-        key: aptos-cli-${{ runner.os }}-${{ steps.dl.outputs.arch_name }}-${{ steps.get_version.outputs.version }}-${{ inputs.movefmt-version }}-${{ inputs.install-dir }}-${{ inputs.movefmt-username }}-${{ inputs.movefmt-repo }}
+        path: ~/.aptoscli/bin
+        key: aptos-cli-${{ runner.os }}-${{ runner.arch }}-${{ steps.get_version.outputs.version }}-${{ inputs.movefmt-version }}-${{ inputs.movefmt-username }}-${{ inputs.movefmt-repo }}
 
     - name: Build download URL
       id: dl
       if: steps.cache-aptos.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        INSTALL_DIR="${{ inputs.install-dir }}"
-        INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
+        INSTALL_DIR="$HOME/.aptoscli"
         # Detect OS and arch for asset naming
         case "${RUNNER_OS}" in
           Linux)
@@ -142,8 +138,7 @@ runs:
       if: runner.os != 'Windows' && steps.cache-aptos.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        INSTALL_DIR="${{ inputs.install-dir }}"
-        INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
+        INSTALL_DIR="$HOME/.aptoscli"
         unzip aptos.zip -d aptos
         mkdir -p "$INSTALL_DIR/bin"
         mv aptos/aptos "$INSTALL_DIR/bin/"
@@ -154,10 +149,7 @@ runs:
       if: runner.os == 'Windows' && steps.cache-aptos.outputs.cache-hit != 'true'
       shell: pwsh
       run: |
-        $INSTALL_DIR = '${{ inputs.install-dir }}'
-        if ($INSTALL_DIR.StartsWith('~')) {
-          $INSTALL_DIR = $INSTALL_DIR -replace '^~', $env:USERPROFILE
-        }
+        $INSTALL_DIR = "$env:USERPROFILE\.aptoscli"
         Expand-Archive aptos.zip -DestinationPath aptos
         $dest = "$INSTALL_DIR\bin"
         New-Item -ItemType Directory -Force -Path $dest | Out-Null
@@ -169,8 +161,7 @@ runs:
       if: steps.cache-aptos.outputs.cache-hit == 'true' && runner.os != 'Windows'
       shell: bash
       run: |
-        INSTALL_DIR="${{ inputs.install-dir }}"
-        INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
+        INSTALL_DIR="$HOME/.aptoscli"
         echo "Using cached Aptos CLI installation"
         # Add to PATH for subsequent steps
         echo "$INSTALL_DIR/bin" >> $GITHUB_PATH
@@ -179,10 +170,7 @@ runs:
       if: steps.cache-aptos.outputs.cache-hit == 'true' && runner.os == 'Windows'
       shell: pwsh
       run: |
-        $INSTALL_DIR = '${{ inputs.install-dir }}'
-        if ($INSTALL_DIR.StartsWith('~')) {
-          $INSTALL_DIR = $INSTALL_DIR -replace '^~', $env:USERPROFILE
-        }
+        $INSTALL_DIR = "$env:USERPROFILE\.aptoscli"
         Write-Host "Using cached Aptos CLI installation"
         # Add to PATH for subsequent steps
         Add-Content -Path $Env:GITHUB_PATH -Value "$INSTALL_DIR\bin"
@@ -190,8 +178,7 @@ runs:
     - name: Verify installation
       shell: bash
       run: |
-        INSTALL_DIR="${{ inputs.install-dir }}"
-        INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
+        INSTALL_DIR="$HOME/.aptoscli"
         echo "Installed Aptos CLI version:"
         "$INSTALL_DIR/bin/aptos" --version 
 
@@ -199,8 +186,7 @@ runs:
       if: steps.cache-aptos.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        INSTALL_DIR="${{ inputs.install-dir }}"
-        INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
+        INSTALL_DIR="$HOME/.aptoscli"
         # Detect OS and arch for movefmt asset naming
         case "${RUNNER_OS}" in
           Linux)
@@ -277,7 +263,6 @@ runs:
     - name: Verify movefmt installation
       shell: bash
       run: |
-        INSTALL_DIR="${{ inputs.install-dir }}"
-        INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
+        INSTALL_DIR="$HOME/.aptoscli"
         echo "Installed movefmt version:"
         "$INSTALL_DIR/bin/movefmt" --version 

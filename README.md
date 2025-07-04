@@ -81,7 +81,6 @@ jobs:
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `version` | Aptos CLI version (tag). Use 'latest' to automatically fetch the latest release | No | `latest` |
-| `install-dir` | Install directory for Aptos CLI (will install to <dir>/bin) | No | `$HOME/.aptoscli` |
 | `movefmt-username` | GitHub username for movefmt repository | No | `movebit` |
 | `movefmt-repo` | GitHub repository name for movefmt | No | `movefmt` |
 | `movefmt-version` | movefmt version to install | No | `1.2.3` |
@@ -90,7 +89,7 @@ jobs:
 ## Outputs
 
 This action doesn't produce any outputs, but it:
-- Installs the Aptos CLI to `$HOME/.aptos/bin` (Linux/macOS) or `%USERPROFILE%\.aptos\bin` (Windows)
+- Installs the Aptos CLI to `$HOME/.aptoscli/bin` (Linux/macOS) or `%USERPROFILE%\.aptoscli\bin` (Windows)
 - Adds the installation directory to `PATH` for subsequent steps
 - Verifies the installation by running `aptos --version`
 
@@ -131,9 +130,9 @@ curl -s https://api.github.com/repos/aptos-labs/aptos-core/releases/latest | gre
 # Download and install manually
 curl -L "https://github.com/aptos-labs/aptos-core/releases/download/aptos-cli-v7.5.0/aptos-cli-7.5.0-darwin-x86_64.zip" -o aptos.zip
 unzip aptos.zip -d aptos
-mkdir -p "$HOME/.aptos/bin"
-mv aptos/aptos "$HOME/.aptos/bin/"
-export PATH="$HOME/.aptos/bin:$PATH"
+mkdir -p "$HOME/.aptoscli/bin"
+mv aptos/aptos "$HOME/.aptoscli/bin/"
+export PATH="$HOME/.aptoscli/bin:$PATH"
 aptos --version
 ```
 
