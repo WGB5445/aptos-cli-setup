@@ -24,6 +24,10 @@ inputs:
     description: "movefmt version to install"
     required: false
     default: "1.2.3"
+  github-token:
+    description: "GitHub token for API access (for higher rate limits and private repos)"
+    required: false
+    default: ${{ github.token }}
 runs:
   using: "composite"
   steps:
@@ -33,7 +37,12 @@ runs:
       run: |
         if [ "${{ inputs.version }}" = "latest" ]; then
           # Get all releases and find the latest CLI release
-          TAG=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -s https://api.github.com/repos/aptos-labs/aptos-core/releases \
+          # Require token for API access
+          if [ -z "${{ inputs.github-token }}" ]; then
+            echo "Error: github-token is required for fetching latest version from GitHub API"
+            exit 1
+          fi
+          TAG=$(curl -H "Authorization: token ${{ inputs.github-token }}" -s https://api.github.com/repos/aptos-labs/aptos-core/releases \
                 | grep '"tag_name":' | grep 'aptos-cli-v' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
           if [ -z "$TAG" ]; then
             echo "Error: Failed to fetch latest CLI version from GitHub API"
@@ -106,7 +115,12 @@ runs:
     - name: Download ZIP archive
       shell: bash
       run: |
-        curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -L "${{ steps.dl.outputs.url }}" -o aptos.zip
+        # Require token for download
+        if [ -z "${{ inputs.github-token }}" ]; then
+          echo "Error: github-token is required for downloading Aptos CLI"
+          exit 1
+        fi
+        curl -H "Authorization: token ${{ inputs.github-token }}" -L "${{ steps.dl.outputs.url }}" -o aptos.zip
         if [ ! -f aptos.zip ]; then
           echo "Error: Failed to download Aptos CLI from ${{ steps.dl.outputs.url }}"
           exit 1
@@ -184,7 +198,12 @@ runs:
         
         # Download movefmt
         if [ "$RUNNER_OS" = "Windows" ]; then
-          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -L "$movefmt_url" -o movefmt.exe
+          # Require token for download
+          if [ -z "${{ inputs.github-token }}" ]; then
+            echo "Error: github-token is required for downloading movefmt"
+            exit 1
+          fi
+          curl -H "Authorization: token ${{ inputs.github-token }}" -L "$movefmt_url" -o movefmt.exe
           if [ ! -f movefmt.exe ]; then
             echo "Error: Failed to download movefmt from $movefmt_url"
             exit 1
@@ -193,7 +212,12 @@ runs:
           mkdir -p "${{ inputs.install-dir }}/bin"
           mv movefmt.exe "${{ inputs.install-dir }}/bin/"
         else
-          curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -L "$movefmt_url" -o movefmt
+          # Require token for download
+          if [ -z "${{ inputs.github-token }}" ]; then
+            echo "Error: github-token is required for downloading movefmt"
+            exit 1
+          fi
+          curl -H "Authorization: token ${{ inputs.github-token }}" -L "$movefmt_url" -o movefmt
           if [ ! -f movefmt ]; then
             echo "Error: Failed to download movefmt from $movefmt_url"
             exit 1
