@@ -99,10 +99,8 @@ This action doesn't produce any outputs, but it:
 |----|--------------|--------|
 | Linux | x86_64 | ✅ Supported |
 | Linux | aarch64 | ✅ Supported |
-| macOS | x86_64 | ✅ Supported |
 | macOS | aarch64 | ✅ Supported |
 | Windows | x86_64 | ✅ Supported |
-| Windows | aarch64 | ⚠️ Limited support (runners not widely available) |
 
 ## Testing
 
