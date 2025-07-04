@@ -67,8 +67,20 @@ runs:
         
         echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+    - name: Cache Aptos CLI
+      id: cache-aptos
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.install-dir }}/bin
+        key: aptos-cli-${{ steps.get_version.outputs.version }}-${{ runner.os }}-${{ runner.arch }}
+        restore-keys: |
+          aptos-cli-${{ steps.get_version.outputs.version }}-${{ runner.os }}-
+          aptos-cli-${{ steps.get_version.outputs.version }}-
+          aptos-cli-
+
     - name: Build download URL
       id: dl
+      if: steps.cache-aptos.outputs.cache-hit != 'true'
       shell: bash
       run: |
         # Detect OS and arch for asset naming
@@ -113,6 +125,7 @@ runs:
         echo "url=$url" >> $GITHUB_OUTPUT
 
     - name: Download ZIP archive
+      if: steps.cache-aptos.outputs.cache-hit != 'true'
       shell: bash
       run: |
         # Require token for download
@@ -127,7 +140,7 @@ runs:
         fi
 
     - name: Unpack & install (Linux/macOS)
-      if: runner.os != 'Windows'
+      if: runner.os != 'Windows' && steps.cache-aptos.outputs.cache-hit != 'true'
       shell: bash
       run: |
         unzip aptos.zip -d aptos
@@ -137,7 +150,7 @@ runs:
         echo "${{ inputs.install-dir }}/bin" >> $GITHUB_PATH
 
     - name: Unpack & install (Windows)
-      if: runner.os == 'Windows'
+      if: runner.os == 'Windows' && steps.cache-aptos.outputs.cache-hit != 'true'
       shell: pwsh
       run: |
         Expand-Archive aptos.zip -DestinationPath aptos
@@ -147,13 +160,41 @@ runs:
         # Add to PATH for subsequent steps
         Add-Content -Path $Env:GITHUB_PATH -Value $dest
 
+    - name: Add to PATH (cache hit)
+      if: steps.cache-aptos.outputs.cache-hit == 'true' && runner.os != 'Windows'
+      shell: bash
+      run: |
+        echo "Using cached Aptos CLI installation"
+        # Add to PATH for subsequent steps
+        echo "${{ inputs.install-dir }}/bin" >> $GITHUB_PATH
+
+    - name: Add to PATH (cache hit - Windows)
+      if: steps.cache-aptos.outputs.cache-hit == 'true' && runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        Write-Host "Using cached Aptos CLI installation"
+        # Add to PATH for subsequent steps
+        Add-Content -Path $Env:GITHUB_PATH -Value "${{ inputs.install-dir }}\bin"
+
     - name: Verify installation
       shell: bash
       run: |
         echo "Installed Aptos CLI version:"
         aptos --version 
 
+    - name: Cache movefmt CLI
+      id: cache-movefmt
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.install-dir }}/bin/movefmt*
+        key: movefmt-${{ inputs.movefmt-version }}-${{ runner.os }}-${{ runner.arch }}
+        restore-keys: |
+          movefmt-${{ inputs.movefmt-version }}-${{ runner.os }}-
+          movefmt-${{ inputs.movefmt-version }}-
+          movefmt-
+
     - name: Install movefmt CLI
+      if: steps.cache-movefmt.outputs.cache-hit != 'true'
       shell: bash
       run: |
         # Detect OS and arch for movefmt asset naming
@@ -227,4 +268,10 @@ runs:
           mv movefmt "${{ inputs.install-dir }}/bin/"
         fi
         
-        echo "movefmt installed successfully" 
+        echo "movefmt installed successfully"
+
+    - name: Verify movefmt installation
+      shell: bash
+      run: |
+        echo "Installed movefmt version:"
+        movefmt --version 
