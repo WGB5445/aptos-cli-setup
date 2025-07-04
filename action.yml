@@ -11,7 +11,7 @@ inputs:
   install-dir:
     description: "Install directory for Aptos CLI (will install to <dir>/bin)"
     required: false
-    default: $HOME/.aptoscli
+    default: ~/.aptoscli
   movefmt-username:
     description: "GitHub username for movefmt repository"
     required: false
