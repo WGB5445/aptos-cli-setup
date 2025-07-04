@@ -1,0 +1,42 @@
+name: Release and update v1 tag
+
+on:
+  push:
+    tags:
+      - 'v1.*.*'     # Listen for all v1.x.y tag pushes
+
+permissions:
+  contents: write   # Need write permission to push tags
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for tag operations
+
+      - name: Update 'v1' tag to this release
+        run: |
+          # Configure git user info
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Get current tag name (remove refs/tags/ prefix)
+          CURRENT_TAG="${GITHUB_REF#refs/tags/}"
+          echo "Current tag: $CURRENT_TAG"
+          
+          # Delete local v1 tag if exists
+          git tag -d v1 2>/dev/null || true
+          
+          # Create new v1 tag pointing to current commit
+          git tag v1
+          
+          # Push v1 tag to remote repository
+          echo "Pushing v1 tag to origin..."
+          git push origin v1 --force
+          
+          echo "Successfully updated v1 tag to point to $CURRENT_TAG"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
