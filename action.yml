@@ -11,7 +11,7 @@ inputs:
   install-dir:
     description: "Install directory for Aptos CLI (will install to <dir>/bin)"
     required: false
-    default: ~/.aptoscli
+    default: .aptoscli
   movefmt-username:
     description: "GitHub username for movefmt repository"
     required: false
@@ -72,12 +72,7 @@ runs:
       uses: actions/cache@v4
       with:
         path: ${{ inputs.install-dir }}/bin
-        key: aptos-setup-${{ steps.get_version.outputs.version }}-${{ inputs.movefmt-version }}-${{ runner.os }}-${{ runner.arch }}
-        restore-keys: |
-          aptos-setup-${{ steps.get_version.outputs.version }}-${{ inputs.movefmt-version }}-${{ runner.os }}-
-          aptos-setup-${{ steps.get_version.outputs.version }}-${{ inputs.movefmt-version }}-
-          aptos-setup-${{ steps.get_version.outputs.version }}-
-          aptos-setup-
+        key: aptos-setup-${{ steps.dl.outputs.arch_name }}-${{ steps.get_version.outputs.version }}-${{ inputs.movefmt-version }}-${{ runner.os }}
 
     - name: Build download URL
       id: dl
@@ -126,6 +121,7 @@ runs:
         asset_name="aptos-cli-${{ steps.get_version.outputs.version }}-${os_name}-${arch_name}.zip"
         url="https://github.com/aptos-labs/aptos-core/releases/download/aptos-cli-v${{ steps.get_version.outputs.version }}/$asset_name"
         echo "url=$url" >> $GITHUB_OUTPUT
+        echo "arch_name=$arch_name" >> $GITHUB_OUTPUT
 
     - name: Download ZIP archive
       if: steps.cache-aptos.outputs.cache-hit != 'true'
@@ -285,14 +281,3 @@ runs:
         INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
         echo "Installed movefmt version:"
         "$INSTALL_DIR/bin/movefmt" --version 
-
-    - name: Save installation cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ inputs.install-dir }}/bin
-        key: aptos-setup-${{ steps.get_version.outputs.version }}-${{ inputs.movefmt-version }}-${{ runner.os }}-${{ runner.arch }}
-        restore-keys: |
-          aptos-setup-${{ steps.get_version.outputs.version }}-${{ inputs.movefmt-version }}-${{ runner.os }}-
-          aptos-setup-${{ steps.get_version.outputs.version }}-${{ inputs.movefmt-version }}-
-          aptos-setup-${{ steps.get_version.outputs.version }}-
-          aptos-setup- 
