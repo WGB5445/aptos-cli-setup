@@ -182,7 +182,19 @@ runs:
         echo "Installed Aptos CLI version:"
         aptos --version 
 
+    - name: Cache movefmt CLI
+      id: cache-movefmt
+      uses: actions/cache@v4
+      with:
+        path: ${{ inputs.install-dir }}/bin/movefmt*
+        key: movefmt-${{ inputs.movefmt-version }}-${{ runner.os }}-${{ runner.arch }}
+        restore-keys: |
+          movefmt-${{ inputs.movefmt-version }}-${{ runner.os }}-
+          movefmt-${{ inputs.movefmt-version }}-
+          movefmt-
+
     - name: Install movefmt CLI
+      if: steps.cache-movefmt.outputs.cache-hit != 'true'
       shell: bash
       run: |
         # Detect OS and arch for movefmt asset naming
@@ -256,4 +268,10 @@ runs:
           mv movefmt "${{ inputs.install-dir }}/bin/"
         fi
         
-        echo "movefmt installed successfully" 
+        echo "movefmt installed successfully"
+
+    - name: Verify movefmt installation
+      shell: bash
+      run: |
+        echo "Installed movefmt version:"
+        movefmt --version 
