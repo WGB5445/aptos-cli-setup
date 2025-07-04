@@ -9,6 +9,7 @@ A GitHub Action to download and install the Aptos CLI on CI environments (Linux/
 - ✅ **Flexible versioning**: Use latest release or specify a specific version
 - ✅ **Automatic PATH setup**: CLI is automatically added to PATH for subsequent steps
 - ✅ **Installation verification**: Verifies the installation by checking the CLI version
+- ✅ **GitHub token required**: Uses GitHub token for API access and movefmt download
 
 ## Usage
 
@@ -17,6 +18,8 @@ A GitHub Action to download and install the Aptos CLI on CI environments (Linux/
 ```yaml
 - name: Setup Aptos CLI
   uses: WGB5445/aptos-cli-setup@v1
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ### Specify a Version
@@ -25,7 +28,20 @@ A GitHub Action to download and install the Aptos CLI on CI environments (Linux/
 - name: Setup Aptos CLI
   uses: WGB5445/aptos-cli-setup@v1
   with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
     version: "7.5.0"
+```
+
+### GitHub Token Required
+
+A GitHub token is required for downloading movefmt:
+
+```yaml
+- name: Setup Aptos CLI
+  uses: WGB5445/aptos-cli-setup@v1
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    version: "latest"
 ```
 
 ### Complete Workflow Example
@@ -56,6 +72,8 @@ jobs:
 
     - name: Setup Aptos CLI
       uses: WGB5445/aptos-cli-setup@v1
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Test Aptos CLI
       run: |
@@ -68,6 +86,11 @@ jobs:
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `version` | Aptos CLI version (tag). Use 'latest' to automatically fetch the latest release | No | `latest` |
+| `install-dir` | Install directory for Aptos CLI (will install to <dir>/bin) | No | `$HOME/.aptoscli` |
+| `movefmt-username` | GitHub username for movefmt repository | No | `movebit` |
+| `movefmt-repo` | GitHub repository name for movefmt | No | `movefmt` |
+| `movefmt-version` | movefmt version to install | No | `1.2.3` |
+| `github-token` | GitHub token for API access (required for downloading movefmt) | Yes | - |
 
 ## Outputs
 
@@ -130,6 +153,26 @@ The repository includes a test workflow (`.github/workflows/test.yml`) that test
 1. **Download fails**: Check if the version exists in the [Aptos releases](https://github.com/aptos-labs/aptos-core/releases)
 2. **Unsupported OS/Arch**: The action will fail with a clear error message for unsupported combinations
 3. **PATH not set**: The action automatically adds the CLI to PATH, but you can manually add it if needed
+4. **GitHub API errors**: The action includes retry logic and better error handling for API rate limits
+
+### GitHub API Issues
+
+If you encounter GitHub API errors, the action now includes:
+
+- **Better error messages**: Clear guidance on what went wrong and how to fix it
+- **GitHub token required**: Uses `${{ github.token }}` for API access and movefmt download
+
+**Common causes of API errors:**
+- **Missing token**: GitHub token is required for downloading movefmt
+- **Rate limiting**: GitHub limits API requests
+- **Network issues**: Temporary connectivity problems
+- **Repository access**: The repositories might be temporarily unavailable
+
+**Solutions:**
+1. **Provide GitHub token**: Always include `github-token: ${{ secrets.GITHUB_TOKEN }}`
+2. **Use a specific version**: Instead of `latest`, specify a version like `7.5.0`
+3. **Check network**: Ensure your runner has internet access
+4. **Check token permissions**: Ensure the token has appropriate permissions
 
 ### Debug Mode
 
