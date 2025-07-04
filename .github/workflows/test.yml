@@ -28,6 +28,8 @@ jobs:
           # Windows ARM64 runners are not widely available yet
           - os: windows-latest
             arch: arm64
+          - os: macos-latest
+            arch: x64
         include:
           # Test specific version
           - os: ubuntu-latest
